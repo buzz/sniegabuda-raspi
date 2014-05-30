@@ -1,7 +1,9 @@
 #!/usr/bin/python
 
 from time import sleep
-from led import strip, Color
+from ledstrip import LEDStrip
+
+strip = LEDStrip()
 
 min = 36
 max = 140
@@ -16,6 +18,7 @@ while True:
     if   b > 255: b = 255
     elif b < 0:   b = 0
 
-    strip.fill(Color(b, 0, 0))
+    for i in xrange(105):
+        strip.set(i, b, 0, 0)
     strip.update()
     sleep(0.08)

@@ -1,13 +1,14 @@
 #!/usr/bin/python
+'''Test white color'''
 
-from time import sleep
-from led import strip, Color
+from ledstrip import LEDStrip
 
-strip.fillOff()
+strip = LEDStrip()
 
-for i in xrange(210):
-    strip.set(i, Color(127, 127, 127))
+while True:
+    for i in xrange(105):
+        strip.set(i, 255, 255, 255)
+        strip.update()
+
+    strip.off()
     strip.update()
-    sleep(0.05)
-
-sleep(10)

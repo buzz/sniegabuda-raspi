@@ -4,3 +4,6 @@ ThumbsDB
 \#*#
 .#*
 *.pyc
+.project
+.pydevproject
+.settings

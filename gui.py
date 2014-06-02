@@ -9,7 +9,12 @@ import numpy as np
 from model import middle_sorted as leds
 # leds = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
 # leds = leds[:31]
-from voxelspace_cython import VoxelSpace
+
+try:
+	from voxelspace_cython import VoxelSpace
+except ImportError:
+	from voxelspace import VoxelSpace
+
 
 from transformations import euler_matrix
 from math import radians as rad

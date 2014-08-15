@@ -231,6 +231,12 @@ class Domulatrix(App):
 			self.transforms.update(self.initial_transforms)
 			self.modulators.reset()
 
+		def prev_voxelspace(*args):
+			self.load_voxelspace('data/voxelspaces/check-1-0')
+
+		def next_voxelspace(*args):
+			self.load_voxelspace('data/voxelspaces/basic-10x10x10')
+
 		def stop(*args):
 			self.modulators._stop = True
 			self._stop = True
@@ -265,6 +271,10 @@ class Domulatrix(App):
 			'g': {'attr': 'ry', 'func': lambda val, mul: (val+step_rotate*mul)%360 },
 			'v': {'attr': 'rz', 'func': lambda val, mul: (val-step_rotate*mul)%360 },
 			'b': {'attr': 'rz', 'func': lambda val, mul: (val+step_rotate*mul)%360 },
+
+			# voxelspaces
+			260: prev_voxelspace, # arrow-left
+			261: next_voxelspace, # arrow-right
 
 			# special
 			17: stop, # ctrl-q

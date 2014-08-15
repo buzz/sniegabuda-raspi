@@ -15,6 +15,8 @@ try:
 except ImportError:
 	from voxelspace import VoxelSpace
 
+from voxelspace.voxelspace import JsonError
+
 from transformations import euler_matrix
 from math import radians as rad
 
@@ -29,7 +31,7 @@ def debug(*args):
 		sys.stderr.write(str(a) + ' ')
 	sys.stderr.write('\n\r')
 
-DISPLAY_PRESSED_KEY = True
+DISPLAY_PRESSED_KEY = False
 MODULATE = True
 
 class TitlePad(object):
@@ -59,16 +61,32 @@ class TransformsWindow(object):
 
 	def __init__(self):
 		begin_x = 0; begin_y = 0
-		height = 20; width = 80
+		height = 22; width = 80
 		self.win = curses.newwin(height, width, begin_y, begin_x)
 
-	def update(self, transforms):
-		t = transforms
+		t = self.transforms = {}
+		t['tx'] = t['ty'] = t['tz'] = -1
+		t['rx'] = t['ry'] = t['rz'] = -1
+		t['sx'] = t['sy'] = t['sz'] = -1
+		self.voxelspace_folder = 'n/a'
+
+	def update_transforms(self, transforms):
+		self.transforms = transforms
+		self.update()
+
+	def update_voxelspace_folder(self, voxelspace_folder):
+		self.voxelspace_folder = voxelspace_folder
+		self.update()
+
+	def update(self):
+		t = self.transforms
 		win = self.win
 
 		win.erase()
 
 		lines = """
+			=============================================
+			voxelspace: "%s"
 			=============================================
 			            |    X       Y       Z
 			=============================================
@@ -92,6 +110,7 @@ class TransformsWindow(object):
 		"""
 
 		lines = lines % (
+			self.voxelspace_folder,
 			t['tx'], t['ty'], t['tz'],
 			t['rx'], t['ry'], t['rz'],
 			t['sx'], t['sy'], t['sz']
@@ -147,10 +166,11 @@ class Modulators(threading.Thread):
 
 	def __init__(self, transforms, voxelspace, update):
 		threading.Thread.__init__(self)
+		self._stop = False
+
 		self.frame = -1
 		self.transforms = transforms
 		self.update = update
-		self._stop = False
 		self.init_modulators(voxelspace)
 
 	def init_modulators(self, voxelspace):
@@ -168,6 +188,9 @@ class Modulators(threading.Thread):
 		while not self._stop:
 			self.step()
 			time.sleep(1./self.framerate)
+
+	def stop(self):
+		self._stop = True
 
 	def reset(self):
 		self.frame = -1
@@ -194,6 +217,14 @@ class Domulatrix(App):
 	def run(self, voxel_folder):
 		# titlepad = TitlePad()
 		# titlepad.refresh()
+
+		self.voxels = None
+		self.modulators = None
+		self.transforms_window = None
+
+		self.transforms_window = TransformsWindow()
+		self.transforms_window.update_voxelspace_folder('XXX')
+
 		self.init_transforms()
 		self.load_voxelspace(voxel_folder)
 		self.init_gui()
@@ -207,8 +238,6 @@ class Domulatrix(App):
 
 	def init_gui(self):
 		self._stop = False
-
-		self.transforms_window = TransformsWindow()
 
 		t = self.transforms
 
@@ -238,7 +267,7 @@ class Domulatrix(App):
 			self.load_voxelspace('data/voxelspaces/basic-10x10x10')
 
 		def stop(*args):
-			self.modulators._stop = True
+			self.modulators.stop()
 			self._stop = True
 
 		events = {
@@ -306,19 +335,36 @@ class Domulatrix(App):
 		self.event_loop(events)
 
 	def load_voxelspace(self, voxel_folder):
-		self.voxels = VoxelSpace()
-		self.voxels.load(voxel_folder)
 
-		if hasattr(self, 'modulators'):
-			self.modelators.stop()
+		# debug('XXXXXX', voxel_folder)
+		# time.sleep(3)
+		# sys.exit()
 
-		self.modulators = Modulators(
-			self.transforms,
-			self.voxels,
-			self.update
-		)
+		error = None
 
-		self.modulators.start()
+		try:
+			voxels = VoxelSpace()
+			voxels.load(voxel_folder)
+			modulators = Modulators(
+				self.transforms,
+				voxels,
+				self.update
+			)
+		except JsonError:
+			error = ('Error loading settings.py', (255, 255, 0))
+
+		if error:
+			self.flash_leds()
+			debug('*** ERROR ***\n%s' % error[0])
+			if not self.voxels:
+				time.sleep(2)
+				sys.exit()
+		else:
+			self.voxels = voxels
+			if self.modulators: self.modulators.stop()
+			self.modulators = modulators
+			self.modulators.start()
+			self.transforms_window.update_voxelspace_folder(voxel_folder)
 
 	def get_transformed_model(self, transforms):
 		t = transforms
@@ -355,7 +401,7 @@ class Domulatrix(App):
 		return leds_
 
 	def update(self, transforms):
-		self.transforms_window.update(transforms)
+		self.transforms_window.update_transforms(transforms)
 		self.update_leds(transforms)
 
 	def update_leds(self, transforms):

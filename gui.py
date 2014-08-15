@@ -205,16 +205,17 @@ class Domulatrix(App):
 		self.transforms_window = None
 
 		self.transforms_window = TransformsWindow()
-		self.transforms_window.update_voxelspace_folder('XXX')
-
-		self.find_available_voxelspaces()
 
 		self.init_transforms()
-		self.load_voxelspace(voxel_folder)
+
+		self.find_available_voxelspaces()
+		self.load_voxelspace(self.available_voxelspaces[0])
+
 		self.init_gui()
 
 	def find_available_voxelspaces(self):
 		self.available_voxelspaces = []
+		self.current_voxelspace = 0
 
 		for folder_name in os.listdir(VOXELSPACES_ROOT_FOLDER):
 			folder_path = join(VOXELSPACES_ROOT_FOLDER, folder_name)
@@ -224,7 +225,9 @@ class Domulatrix(App):
 			layers_folder = join(folder_path, 'layers')
 			layers_exist = exists(layers_folder) and bool(os.listdir(layers_folder))
 			if not layers_exist: continue
-			self.available_voxelspaces.append((folder_name, settings_files))
+
+			for settings_file in settings_files:
+				self.available_voxelspaces.append((folder_name, settings_file))
 
 	def init_transforms(self):
 		t = self.initial_transforms = {}
@@ -258,10 +261,14 @@ class Domulatrix(App):
 			self.modulators.reset()
 
 		def prev_voxelspace(*args):
-			self.load_voxelspace('data/voxelspaces/check-1-0')
+			self.current_voxelspace -= 1
+			self.current_voxelspace %= len(self.available_voxelspaces)
+			self.load_voxelspace(self.available_voxelspaces[self.current_voxelspace])
 
 		def next_voxelspace(*args):
-			self.load_voxelspace('data/voxelspaces/basic-10x10x10')
+			self.current_voxelspace += 1
+			self.current_voxelspace %= len(self.available_voxelspaces)
+			self.load_voxelspace(self.available_voxelspaces[self.current_voxelspace])
 
 		def stop(*args):
 			self.modulators.stop()
@@ -331,9 +338,11 @@ class Domulatrix(App):
 		self.update(t)
 		self.event_loop(events)
 
-	def load_voxelspace(self, voxel_folder):
+	def load_voxelspace(self, settings_file):
 
-		# debug('XXXXXX', voxel_folder)
+		settings_file = '%s/%s' % settings_file
+
+		# debug('XXXXXX', settings_file)
 		# time.sleep(3)
 		# sys.exit()
 
@@ -341,7 +350,7 @@ class Domulatrix(App):
 
 		try:
 			voxels = VoxelSpace()
-			voxels.load(voxel_folder)
+			voxels.load(join(VOXELSPACES_ROOT_FOLDER, settings_file))
 			modulators = Modulators(
 				self.transforms,
 				voxels,
@@ -361,7 +370,7 @@ class Domulatrix(App):
 			if self.modulators: self.modulators.stop()
 			self.modulators = modulators
 			self.modulators.start()
-			self.transforms_window.update_voxelspace_folder(voxel_folder)
+			self.transforms_window.update_voxelspace_folder(settings_file)
 
 	def get_transformed_model(self, transforms):
 		t = transforms

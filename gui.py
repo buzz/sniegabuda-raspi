@@ -122,38 +122,44 @@ class App(object):
 		except KeyboardInterrupt:
 			pass
 
+def oscillator(speed, depth):
+	def f(frame):
+		return math.sin(frame*speed)*depth
+	return f
+
+def linear_motion(speed, wrap=None, minimum=float('-inf'), maximum=float('inf')):
+	def f(frame):
+		v = frame*speed
+		if wrap is not None: v %= wrap
+		v = min(maximum, v)
+		v = max(minimum, v)
+		return v
+	return f
+
+modulator_functions = {
+	'oscillator': oscillator,
+	'linear_motion': linear_motion
+}
+
 class Modulators(threading.Thread):
-	def __init__(self, transforms, update):
+	def __init__(self, transforms, voxelspace, update):
 		threading.Thread.__init__(self)
 		self.frame = -1
 		self.transforms = transforms
 		self.update = update
-
-		def oscillator(speed, depth):
-			def f(frame):
-				return math.sin(frame*speed)*depth
-			return f
-
-		def linear_motion(speed, wrap=None, minimum=float('-inf'), maximum=float('inf')):
-			def f(frame):
-				v = frame*speed
-				if wrap is not None: v %= wrap
-				v = min(maximum, v)
-				v = max(minimum, v)
-				return v
-			return f
-
-		self.modulators = {
-			'tz': (
-				oscillator(speed=0.01115, depth=20)
-			),
-			'rx': (
-				linear_motion(speed=0.03452, wrap=360),
-				# oscillator(speed=0.01115, depth=20)
-			),
-		}
-
 		self._stop = False
+		self.init_modulators(voxelspace)
+
+	def init_modulators(self, voxelspace):
+		self.modulators = {}
+
+		if not 'modulation' in voxelspace.settings:
+			return
+
+		for attr, mods in voxelspace.settings['modulation'].items():
+			for mod in mods:
+				func = modulator_functions[mod['type']](**mod['options'])
+				self.modulators.setdefault(attr, []).append(func)
 
 	def run(self):
 		while not self._stop:
@@ -192,8 +198,6 @@ class Domulatrix(App):
 		self.voxels.load(folder)
 
 		self.transforms_window = TransformsWindow()
-
-		class Transform(object): pass
 
 		t = self.initial_transforms = {}
 		t['tx'] = t['ty'] = t['tz'] = 0
@@ -284,7 +288,11 @@ class Domulatrix(App):
 				events[ord(char.upper())] = event_wrapper(handler, shift_multiplier)
 				del events[char]
 
-		self.modulators = Modulators(t, self.update)
+		self.modulators = Modulators(
+			t,
+			self.voxels,
+			self.update
+		)
 		self.modulators.start()
 		self.event_loop(events)
 

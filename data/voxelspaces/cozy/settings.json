@@ -1,4 +1,14 @@
 {
 	"layer_size": [10, 10],
-	"bounds": [[0, 0, 0], [10, 10, 2]]
+	"bounds": [[0, 0, 0], [10, 10, 2]],
+
+	"modulation": {
+		"tz": [
+			{"type": "oscillator", "options": { "speed": 0.01115, "depth": 20 }}
+		],
+
+		"rx": [
+			{"type": "linear_motion", "options": { "speed": 0.03452, "wrap": 360 }}
+		]
+	}
 }

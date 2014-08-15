@@ -7,6 +7,9 @@ import numpy as np
 from getpixel import getpixel
 from maprange import maprange
 
+class JsonError(Exception):
+	pass
+
 class VoxelSpace(object):
 	def __init__(self):
 		pass
@@ -22,7 +25,10 @@ class VoxelSpace(object):
 	def load(self, voxelspace_folder):
 		settings = join(voxelspace_folder, 'settings.json')
 		with open(settings) as f:
-			self.settings = json.load(f)
+			try:
+				self.settings = json.load(f)
+			except ValueError:
+				raise JsonError()
 
 		self.setbounds(*self.settings['bounds'])
 

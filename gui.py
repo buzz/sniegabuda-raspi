@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 
-import sys
+import sys, os
+from os.path import exists, join, isdir
 import time
 import threading
 import curses
 import time
 import math
+
 import numpy as np
 
 from model import middle_sorted as leds
@@ -31,6 +33,7 @@ def debug(*args):
 		sys.stderr.write(str(a) + ' ')
 	sys.stderr.write('\n\r')
 
+VOXELSPACES_ROOT_FOLDER = 'data/voxelspaces/'
 DISPLAY_PRESSED_KEY = False
 MODULATE = True
 
@@ -204,9 +207,24 @@ class Domulatrix(App):
 		self.transforms_window = TransformsWindow()
 		self.transforms_window.update_voxelspace_folder('XXX')
 
+		self.find_available_voxelspaces()
+
 		self.init_transforms()
 		self.load_voxelspace(voxel_folder)
 		self.init_gui()
+
+	def find_available_voxelspaces(self):
+		self.available_voxelspaces = []
+
+		for folder_name in os.listdir(VOXELSPACES_ROOT_FOLDER):
+			folder_path = join(VOXELSPACES_ROOT_FOLDER, folder_name)
+			if not isdir(folder_path): continue
+			settings_files = [name for name in os.listdir(folder_path) if name.startswith('settings') and name.endswith('.json')]
+			if not settings_files: continue
+			layers_folder = join(folder_path, 'layers')
+			layers_exist = exists(layers_folder) and bool(os.listdir(layers_folder))
+			if not layers_exist: continue
+			self.available_voxelspaces.append((folder_name, settings_files))
 
 	def init_transforms(self):
 		t = self.initial_transforms = {}

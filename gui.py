@@ -30,7 +30,7 @@ def debug(*args):
 	sys.stderr.write('\n\r')
 
 DISPLAY_PRESSED_KEY = True
-
+MODULATE = True
 
 class TitlePad(object):
 	def __init__(self):
@@ -122,26 +122,35 @@ class App(object):
 		except KeyboardInterrupt:
 			pass
 
-class Physics(threading.Thread):
-	def __init__(self, transforms, motion, update):
+class Modulators(threading.Thread):
+	def __init__(self, transforms, update):
 		threading.Thread.__init__(self)
 		self.frame = -1
 		self.transforms = transforms
-		self.motion = motion
 		self.update = update
-		lp = self.lfo_pos = {}
-		lp['tx'] = lp['ty'] = lp['tz'] = 0
-		lp['sx'] = lp['sy'] = lp['sz'] = 0
-		lp['rx'] = lp['ry'] = lp['rz'] = 0
 
-		self.lfos = {
-			'rx': {'step': 0.01115, 'depth': 20},
-			'ry': {'step': 0.011711, 'depth': 30},
-			'rz': {'step': 0.012784, 'depth': 40},
-			'tz': {'step': 0.00283, 'depth': 130},
-			'sx': {'step': 0.00223, 'depth': 20},
-			'sy': {'step': 0.00223, 'depth': 20},
-			'sz': {'step': 0.00223, 'depth': 20},
+		def oscillator(speed, depth):
+			def f(frame):
+				return math.sin(frame*speed)*depth
+			return f
+
+		def linear_motion(speed, wrap=None, minimum=float('-inf'), maximum=float('inf')):
+			def f(frame):
+				v = frame*speed
+				if wrap is not None: v %= wrap
+				v = min(maximum, v)
+				v = max(minimum, v)
+				return v
+			return f
+
+		self.modulators = {
+			'tz': (
+				oscillator(speed=0.01115, depth=20)
+			),
+			'rx': (
+				linear_motion(speed=0.03452, wrap=360),
+				# oscillator(speed=0.01115, depth=20)
+			),
 		}
 
 		self._stop = False
@@ -153,21 +162,19 @@ class Physics(threading.Thread):
 
 	def step(self):
 		self.frame += 1
-		t = self.transforms
-		m = self.motion
-		lp = self.lfo_pos
 
-		for attr in ['tx', 'ty', 'tz', 'rx', 'ry', 'rz']:
-			t[attr] += m[attr]
+		transforms = self.transforms.copy()
 
-		t = t.copy()
-		for attr, values in self.lfos.items():
-			step = values['step']
-			depth = values['depth']
-			lp[attr] += step 
-			t[attr] += math.sin(lp[attr])*depth
+		for attr, funcs in self.modulators.items():
+			if callable(funcs):
+				funcs = (funcs,)
+			for func in funcs:
+				transforms[attr] += func(self.frame)
 
-		self.update(t)
+		if MODULATE:
+			self.update(transforms)
+		else:
+			self.update(self.transforms)
 
 
 class Domulatrix(App):
@@ -189,16 +196,6 @@ class Domulatrix(App):
 		t['tx'] = t['ty'] = t['tz'] = 0
 		t['sx'] = t['sy'] = t['sz'] = 100
 		t['rx'] = t['ry'] = t['rz'] = 0
-
-		m = self.motion = {}
-		m = self.motion = {
-			'tx': 0.03452,
-			'ty': 0.042525,
-			'tz': 0.047234,
-			'rx': 0,
-			'ry': 0,
-			'rz': 0,
-		}
 
 		self.update(t)
 
@@ -275,8 +272,8 @@ class Domulatrix(App):
 				events[ord(char.upper())] = event_wrapper(handler, shift_multiplier)
 				del events[char]
 
-		self.physics = Physics(t, m, self.update)
-		self.physics.start()
+		self.modulators = Modulators(t, self.update)
+		self.modulators.start()
 		self.event_loop(events)
 
 	def get_transformed_model(self, transforms):

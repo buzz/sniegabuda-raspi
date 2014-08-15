@@ -34,26 +34,7 @@ def debug(*args):
 DISPLAY_PRESSED_KEY = False
 MODULATE = True
 
-class TitlePad(object):
-	def __init__(self):
-		w = 80
-		h = 5
 
-		stars = '*'*w
-		title = 'Domulatrix-2000 v0.07a'
-
-		def line(s):
-			return '*%s*' % (s.center(w-2))
-
-		self.pad = pad = curses.newpad(h+1, w)
-		pad.addstr(0, 0, stars)
-		pad.addstr(1, 0, line(''))
-		pad.addstr(2, 0, line(title))
-		pad.addstr(3, 0, line(''))
-		pad.addstr(4, 0, stars)
-
-	def refresh(self):
-		self.pad.refresh(0,0,0,0,5,80)
 
 class TransformsWindow(object):
 	width = 80
@@ -215,8 +196,6 @@ class Modulators(threading.Thread):
 class Domulatrix(App):
 
 	def run(self, voxel_folder):
-		# titlepad = TitlePad()
-		# titlepad.refresh()
 
 		self.voxels = None
 		self.modulators = None

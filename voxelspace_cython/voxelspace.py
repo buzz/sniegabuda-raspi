@@ -1,11 +1,13 @@
 import os
-from os.path import join
+from os.path import join, dirname
 import json
 import Image
 import numpy as np
 
 from getpixel import getpixels as getpixels_cython
 
+class JsonError(Exception):
+	pass
 
 class VoxelSpace(object):
 	def __init__(self):
@@ -19,10 +21,13 @@ class VoxelSpace(object):
 		self.range_y = (y0, y1)
 		self.range_z = (z0, z1)
 
-	def load(self, voxelspace_folder):
-		settings = join(voxelspace_folder, 'settings.json')
-		with open(settings) as f:
-			self.settings = json.load(f)
+	def load(self, settings_file):
+		voxelspace_folder = dirname(settings_file)
+		with open(settings_file) as f:
+			try:
+				self.settings = json.load(f)
+			except ValueError:
+				raise JsonError()
 
 		self.setbounds(*self.settings['bounds'])
 
@@ -37,10 +42,11 @@ class VoxelSpace(object):
 		for z, filename in enumerate(filenames):
 			img = Image.open(filename)
 			img = img.resize((width, height), Image.BILINEAR)
-			self.voxels[:,:,z] = np.asarray(img, dtype=np.float32)
+			self.voxels[:,:,z] = np.asarray(img, dtype=np.float32)[:,:,:3]
 
 	def getpixels(self, leds):
-		return np.asarray(getpixels_cython(leds, self.voxels, self.range_x[0], self.range_x[1], self.range_y[0], self.range_y[1], self.range_z[0], self.range_z[1]), dtype=np.float32)
+		return getpixels_cython(leds, self.voxels, self.range_x[0], self.range_x[1], self.range_y[0], self.range_y[1], self.range_z[0], self.range_z[1])
+		# return np.asarray(getpixels_cython(leds, self.voxels, self.range_x[0], self.range_x[1], self.range_y[0], self.range_y[1], self.range_z[0], self.range_z[1]), dtype=np.float32)
 #		return [self.getpixel(x, y, z) for x, y, z, _ in leds]
 
 

@@ -43,7 +43,7 @@ class VoxelSpace(object):
 		for z, filename in enumerate(filenames):
 			img = Image.open(filename)
 			img = img.resize((width, height), Image.BILINEAR)
-			self.voxels[:,:,z] = np.asarray(img, dtype=np.float32)
+			self.voxels[:,:,z] = np.asarray(img, dtype=np.float32)[:,:,:3]
 
 	def getpixel(self, x, y, z):
 		height, width, depth, color_depth = self.voxels.shape

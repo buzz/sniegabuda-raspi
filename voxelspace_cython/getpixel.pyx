@@ -198,4 +198,4 @@ def getpixels(cnp.ndarray[double, ndim=2] leds, cnp.ndarray[DTYPE_t, ndim=4] vox
 			color_z0b * revzr + color_z1b * zr,
 		])
 
-	return np.array(ret, dtype=DTYPE)
+	return ret

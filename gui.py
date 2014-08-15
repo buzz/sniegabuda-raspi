@@ -160,6 +160,9 @@ class Modulators(threading.Thread):
 			time.sleep(0.02)
 			self.step()
 
+	def reset(self):
+		self.frame = -1
+
 	def step(self):
 		self.frame += 1
 
@@ -192,10 +195,12 @@ class Domulatrix(App):
 
 		class Transform(object): pass
 
-		t = self.transforms = {}
+		t = self.initial_transforms = {}
 		t['tx'] = t['ty'] = t['tz'] = 0
 		t['sx'] = t['sy'] = t['sz'] = 100
 		t['rx'] = t['ry'] = t['rz'] = 0
+
+		t = self.transforms = self.initial_transforms.copy()
 
 		self.update(t)
 
@@ -214,11 +219,18 @@ class Domulatrix(App):
 			t['sy'] *= step_scale ** multiplier
 			t['sz'] *= step_scale ** multiplier
 
+		def reset(*args):
+			self.transforms.update(self.initial_transforms)
+			self.modulators.reset()
+
 		def stop(*args):
 			self.modulators._stop = True
 			self._stop = True
 
 		events = {
+
+			# reset
+			19: reset, # ctrl-s
 
 			# translation
 			'a': {'attr': 'tx', 'func': lambda val, mul: val-(step_translate*mul) },

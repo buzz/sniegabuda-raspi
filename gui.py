@@ -310,7 +310,7 @@ class Domulatrix(App):
 			261: next_voxelspace, # arrow-right
 
 			# special
-			17: stop, # ctrl-q
+			27: stop, # escape
 		}
 
 		def event_wrapper(func, multiplier):

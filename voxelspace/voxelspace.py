@@ -1,5 +1,5 @@
 import os
-from os.path import join
+from os.path import join, dirname
 import json
 import Image
 import numpy as np
@@ -22,9 +22,9 @@ class VoxelSpace(object):
 		self.range_y = (y0, y1)
 		self.range_z = (z0, z1)
 
-	def load(self, voxelspace_folder):
-		settings = join(voxelspace_folder, 'settings.json')
-		with open(settings) as f:
+	def load(self, settings_file):
+		voxelspace_folder = dirname(settings_file)
+		with open(settings_file) as f:
 			try:
 				self.settings = json.load(f)
 			except ValueError:

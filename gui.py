@@ -279,11 +279,6 @@ class Domulatrix(App):
 		self.physics.start()
 		self.event_loop(events)
 
-
-	def update(self, transforms):
-		self.transforms_window.update(transforms)
-		self.update_leds(transforms)
-
 	def get_transformed_model(self, transforms):
 		t = transforms
 
@@ -317,6 +312,10 @@ class Domulatrix(App):
 		leds_ = np.array(leds_)
 
 		return leds_
+
+	def update(self, transforms):
+		self.transforms_window.update(transforms)
+		self.update_leds(transforms)
 
 	def update_leds(self, transforms):
 

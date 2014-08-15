@@ -14,8 +14,12 @@ from model import middle_sorted as leds
 
 try:
 	from voxelspace_cython import VoxelSpace
+	print 'Using fast voxelspace!'
 except ImportError:
 	from voxelspace import VoxelSpace
+	print 'Using slow voxelspace!'
+
+time.sleep(1)
 
 from voxelspace.voxelspace import JsonError
 

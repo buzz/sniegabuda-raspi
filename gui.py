@@ -360,6 +360,19 @@ class Domulatrix(App):
 
 		strip.update()
 
+	def flash_leds(self):
+		if strip is None: return
+
+		for i in range(2):
+			red = (i%2)*255
+
+			for i in xrange(105):
+				strip.set(i, red, 0, 0)
+
+			strip.update()
+
+			time.sleep(0.3)
+
 try:
 	folder = sys.argv[1]
 except IndexError:

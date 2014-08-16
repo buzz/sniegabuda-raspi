@@ -142,6 +142,9 @@ modulator_functions = {
 }
 
 class Modulators(threading.Thread):
+
+	framerate = 60
+
 	def __init__(self, transforms, voxelspace, update):
 		threading.Thread.__init__(self)
 		self.frame = -1
@@ -163,8 +166,8 @@ class Modulators(threading.Thread):
 
 	def run(self):
 		while not self._stop:
-			time.sleep(0.02)
 			self.step()
+			time.sleep(1./self.framerate)
 
 	def reset(self):
 		self.frame = -1
@@ -191,22 +194,23 @@ class Domulatrix(App):
 	def run(self, voxel_folder):
 		# titlepad = TitlePad()
 		# titlepad.refresh()
+		self.init_transforms()
+		self.load_voxelspace(voxel_folder)
+		self.init_gui()
 
-		self._stop = False
-
-		self.voxels = VoxelSpace()
-		self.voxels.load(folder)
-
-		self.transforms_window = TransformsWindow()
-
+	def init_transforms(self):
 		t = self.initial_transforms = {}
 		t['tx'] = t['ty'] = t['tz'] = 0
 		t['sx'] = t['sy'] = t['sz'] = 100
 		t['rx'] = t['ry'] = t['rz'] = 0
-
 		t = self.transforms = self.initial_transforms.copy()
 
-		self.update(t)
+	def init_gui(self):
+		self._stop = False
+
+		self.transforms_window = TransformsWindow()
+
+		t = self.transforms
 
 		shift_multiplier = 6.
 		step_translate   = 1
@@ -288,13 +292,23 @@ class Domulatrix(App):
 				events[ord(char.upper())] = event_wrapper(handler, shift_multiplier)
 				del events[char]
 
+		self.update(t)
+		self.event_loop(events)
+
+	def load_voxelspace(self, voxel_folder):
+		self.voxels = VoxelSpace()
+		self.voxels.load(voxel_folder)
+
+		if hasattr(self, 'modulators'):
+			self.modelators.stop()
+
 		self.modulators = Modulators(
-			t,
+			self.transforms,
 			self.voxels,
 			self.update
 		)
+
 		self.modulators.start()
-		self.event_loop(events)
 
 	def get_transformed_model(self, transforms):
 		t = transforms

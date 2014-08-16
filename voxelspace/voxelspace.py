@@ -45,7 +45,9 @@ class VoxelSpace(object):
 		self.setbounds(*self.settings['bounds'])
 
 		layers = join(voxelspace_folder, 'layers')
-		filenames = map(lambda name: join(layers, name), sorted(os.listdir(layers)))
+		filenames = sorted(os.listdir(layers))
+		filenames = [name for name in filenames if name.endswith('.png') or name.endswith('.jpg')]
+		filenames = map(lambda name: join(layers, name), filenames)
 
 		width, height = self.settings['layer_size']
 		depth = len(filenames)
@@ -53,7 +55,10 @@ class VoxelSpace(object):
 		self.voxels = np.zeros((height, width, depth, 3), dtype='float32')
 
 		for z, filename in enumerate(filenames):
-			img = Image.open(filename)
+			try:
+				img = Image.open(filename)
+			except IOError:
+				continue
 			img = img.resize((width, height), Image.BILINEAR)
 			self.voxels[:,:,z] = np.asarray(img, dtype=np.float32)[:,:,:3]
 

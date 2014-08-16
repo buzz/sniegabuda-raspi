@@ -270,10 +270,6 @@ class Domulatrix(App):
 			self.current_voxelspace %= len(self.available_voxelspaces)
 			self.load_voxelspace(self.available_voxelspaces[self.current_voxelspace])
 
-		def stop(*args):
-			self.modulators.stop()
-			self._stop = True
-
 		events = {
 
 			# reset
@@ -310,7 +306,7 @@ class Domulatrix(App):
 			261: next_voxelspace, # arrow-right
 
 			# special
-			27: stop, # escape
+			27: self.stop, # escape
 		}
 
 		def event_wrapper(func, multiplier):
@@ -337,6 +333,10 @@ class Domulatrix(App):
 
 		self.update(t)
 		self.event_loop(events)
+
+	def stop(self, *args):
+		self.modulators.stop()
+		self._stop = True
 
 	def load_voxelspace(self, settings_file):
 

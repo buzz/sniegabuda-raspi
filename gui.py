@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 
-import sys, os
+import sys
+sys.stderr = open('debug.log', 'a')
+
+import os
 from os.path import exists, join, isdir
 import re
 import time

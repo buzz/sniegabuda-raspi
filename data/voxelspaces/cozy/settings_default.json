@@ -4,7 +4,7 @@
 
 	"modulation": {
 		"tz": [
-			{"type": "oscillator", "options": { "speed": 0.01115, "depth": 20 }}
+			// {"type": "oscillator", "options": { "speed": 0.01115, "depth": 20 }}
 		],
 
 		"rx": [

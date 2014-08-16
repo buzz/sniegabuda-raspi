@@ -25,8 +25,12 @@ class VoxelSpace(object):
 	def load(self, settings_file):
 		voxelspace_folder = dirname(settings_file)
 		with open(settings_file) as f:
+			# remove comments
+			settings_lines = f.read().replace('\r', '').split('\n')
+			settings_lines = [line for line in settings_lines if not line.lstrip().startswith('//')]
+			settings_text  = '\n'.join(settings_lines)
 			try:
-				self.settings = json.load(f)
+				self.settings = json.loads(settings_text)
 			except ValueError:
 				raise JsonError()
 

@@ -2,6 +2,7 @@
 
 import sys, os
 from os.path import exists, join, isdir
+import re
 import time
 import threading
 import curses
@@ -129,7 +130,7 @@ class Domulatrix(object):
 		except KeyboardInterrupt:
 			pass
 
-	def run(self, voxel_folder):
+	def run(self, voxel_folder, settings_file):
 
 		self.voxels = None
 		self.modulators = None
@@ -139,7 +140,11 @@ class Domulatrix(object):
 		self.init_transforms()
 
 		self.find_available_voxelspaces()
-		self.load_voxelspace(self.available_voxelspaces[0])
+		if (voxel_folder, settings_file) in self.available_voxelspaces:
+			self.current_voxelspace = self.available_voxelspaces.index((voxel_folder, settings_file))
+		else:
+			self.current_voxelspace = 0
+		self.load_voxelspace(self.available_voxelspaces[self.current_voxelspace])
 
 		self.init_watchdog()
 		self.init_gui()
@@ -379,10 +384,14 @@ class Domulatrix(object):
 			time.sleep(0.3)
 
 try:
-	folder = sys.argv[1]
+	settings_path = sys.argv[1]
+	voxel_folder, settings_file = re.compile('data/voxelspaces/(.*)/(settings.*\.json)').match(settings_path).groups()
 except IndexError:
 	print 'Argument missing.'
 	sys.exit()
+except AttributeError:
+	print 'Path doesn\'t look right.'
+	sys.exit()
 
-app = Domulatrix()
-app.start(voxel_folder=folder)
+domulatrix = Domulatrix()
+domulatrix.start(voxel_folder, settings_file)

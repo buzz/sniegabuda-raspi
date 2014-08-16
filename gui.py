@@ -167,10 +167,16 @@ class Domulatrix(object):
 	def init_watchdog(self):
 
 		def reload_settings(voxelspace_folder, settings_file):
-			debug('*** reload_settings: %s %s' % (voxelspace_folder, settings_file))
+			current_voxelspace_folder, current_settings_file = self.available_voxelspaces[self.current_voxelspace_idx]
+			if (voxelspace_folder == current_voxelspace_folder and settings_file == current_settings_file):
+				debug('reloading current voxelspace settings.')
+				self.load_voxelspace(current_voxelspace_folder, current_settings_file)
 
 		def reload_voxelspace(voxelspace_folder, image_file):
-			debug('*** reload_voxelspace: %s %s' % (voxelspace_folder, image_file))
+			current_voxelspace_folder, current_settings_file = self.available_voxelspaces[self.current_voxelspace_idx]
+			if (voxelspace_folder == current_voxelspace_folder):
+				debug('reload current voxelspace layers.')
+				self.load_voxelspace(current_voxelspace_folder, current_settings_file)
 
 		self.watchdog = WatchDog(VOXELSPACES_ROOT_FOLDER, reload_settings, reload_voxelspace)
 		self.watchdog.start()

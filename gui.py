@@ -15,16 +15,13 @@ from curses_pads import TransformsPad
 from model import middle_sorted as leds
 from logger import debug
 
-try:
-	from voxelspace_cython import VoxelSpace
+from voxelspace.voxelspace import VoxelSpace, JsonError, fast as _voxelspace_is_fast
+if _voxelspace_is_fast:
 	print 'Using fast voxelspace!'
-except ImportError:
-	from voxelspace import VoxelSpace
+else:
 	print 'Using slow voxelspace!'
 
 time.sleep(1)
-
-from voxelspace.voxelspace import JsonError
 
 import watcher
 from watcher import WatchDog

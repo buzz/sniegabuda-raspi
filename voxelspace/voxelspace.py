@@ -4,16 +4,24 @@ import json
 import Image
 import numpy as np
 
-from getpixel import getpixel
-from maprange import maprange
+getpixels_cython = None
+try:
+	from getpixel import getpixels as getpixels_cython
+	fast = True
+except ImportError:
+	from getpixel import getpixel
+	from maprange import maprange
+	fast = False
 
 class JsonError(Exception):
 	pass
 
 class VoxelSpace(object):
 	def __init__(self):
-		pass
-		# self.images = []
+		if getpixels_cython:
+			self.getpixels = self._getpixels_cython
+		else:
+			self.getpixels = self._getpixels
 
 	def setbounds(self, xyz0, xyz1):
 		x0, y0, z0 = map(lambda i: float(i), xyz0)
@@ -49,16 +57,18 @@ class VoxelSpace(object):
 			img = img.resize((width, height), Image.BILINEAR)
 			self.voxels[:,:,z] = np.asarray(img, dtype=np.float32)[:,:,:3]
 
-	def getpixel(self, x, y, z):
+	def _getpixel(self, x, y, z):
 		height, width, depth, color_depth = self.voxels.shape
 		x = maprange(self.range_x, (0, width),  x)
 		y = maprange(self.range_y, (0, height), y)
 		z = maprange(self.range_z, (0, depth),  z)
 		return getpixel(self.voxels, x, y, z)
 
-	def getpixels(self, leds):
-		return [self.getpixel(x, y, z) for x, y, z, _ in leds]
-	
+	def _getpixels(self, leds):
+		return [self._getpixel(x, y, z) for x, y, z, _ in leds]
+
+	def _getpixels_cython(self, leds):
+		return getpixels_cython(leds, self.voxels, self.range_x[0], self.range_x[1], self.range_y[0], self.range_y[1], self.range_z[0], self.range_z[1])
 
 if __name__ == '__main__':
 	from random import random
@@ -69,7 +79,7 @@ if __name__ == '__main__':
 		print 'assert_pixel(%r, %r)' % (xyz, tuple(self.getpixel(*xyz)))
 
 	def _getpixel(xyz):
-		return tuple(self.getpixel(*xyz))
+		return tuple(self._getpixel(*xyz))
 
 	def assert_pixel(xyz, color):
 		assert _getpixel(xyz) == color

@@ -141,17 +141,16 @@ class Domulatrix(object):
 
 		self.find_available_voxelspaces()
 		if (voxel_folder, settings_file) in self.available_voxelspaces:
-			self.current_voxelspace = self.available_voxelspaces.index((voxel_folder, settings_file))
+			self.current_voxelspace_idx = self.available_voxelspaces.index((voxel_folder, settings_file))
 		else:
-			self.current_voxelspace = 0
-		self.load_voxelspace(self.available_voxelspaces[self.current_voxelspace])
+			self.current_voxelspace_idx = 0
+		self.load_voxelspace(*self.available_voxelspaces[self.current_voxelspace_idx])
 
 		self.init_watchdog()
 		self.init_gui()
 
 	def find_available_voxelspaces(self):
 		self.available_voxelspaces = []
-		self.current_voxelspace = 0
 
 		for folder_name in os.listdir(VOXELSPACES_ROOT_FOLDER):
 			folder_path = join(VOXELSPACES_ROOT_FOLDER, folder_name)
@@ -208,14 +207,14 @@ class Domulatrix(object):
 			self.modulators.reset()
 
 		def prev_voxelspace(*args):
-			self.current_voxelspace -= 1
-			self.current_voxelspace %= len(self.available_voxelspaces)
-			self.load_voxelspace(self.available_voxelspaces[self.current_voxelspace])
+			self.current_voxelspace_idx -= 1
+			self.current_voxelspace_idx %= len(self.available_voxelspaces)
+			self.load_voxelspace(*self.available_voxelspaces[self.current_voxelspace_idx])
 
 		def next_voxelspace(*args):
-			self.current_voxelspace += 1
-			self.current_voxelspace %= len(self.available_voxelspaces)
-			self.load_voxelspace(self.available_voxelspaces[self.current_voxelspace])
+			self.current_voxelspace_idx += 1
+			self.current_voxelspace_idx %= len(self.available_voxelspaces)
+			self.load_voxelspace(*self.available_voxelspaces[self.current_voxelspace_idx])
 
 		events = {
 
@@ -286,9 +285,9 @@ class Domulatrix(object):
 		self.modulators.stop()
 		self._stop = True
 
-	def load_voxelspace(self, settings_file):
+	def load_voxelspace(self, voxel_folder, settings_file):
 
-		settings_file = '%s/%s' % settings_file
+		settings_file = '%s/%s' % (voxel_folder, settings_file)
 
 		# debug('XXXXXX', settings_file)
 		# time.sleep(3)

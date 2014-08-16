@@ -24,6 +24,9 @@ time.sleep(1)
 
 from voxelspace.voxelspace import JsonError
 
+import watcher
+from watcher import WatchDog
+
 from transformations import euler_matrix
 from math import radians as rad
 
@@ -36,8 +39,6 @@ except ImportError:
 VOXELSPACES_ROOT_FOLDER = 'data/voxelspaces/'
 DISPLAY_PRESSED_KEY = False
 MODULATE = True
-
-
 
 class TransformsWindow(object):
 	width = 80
@@ -211,6 +212,7 @@ class Domulatrix(App):
 		self.find_available_voxelspaces()
 		self.load_voxelspace(self.available_voxelspaces[0])
 
+		self.init_watchdog()
 		self.init_gui()
 
 	def find_available_voxelspaces(self):
@@ -228,6 +230,17 @@ class Domulatrix(App):
 
 			for settings_file in settings_files:
 				self.available_voxelspaces.append((folder_name, settings_file))
+
+	def init_watchdog(self):
+
+		def reload_settings(voxelspace_folder, settings_file):
+			debug('*** reload_settings: %s %s' % (voxelspace_folder, settings_file))
+
+		def reload_voxelspace(voxelspace_folder, image_file):
+			debug('*** reload_voxelspace: %s %s' % (voxelspace_folder, image_file))
+
+		self.watchdog = WatchDog(VOXELSPACES_ROOT_FOLDER, reload_settings, reload_voxelspace)
+		self.watchdog.start()
 
 	def init_transforms(self):
 		t = self.initial_transforms = {}
@@ -335,6 +348,7 @@ class Domulatrix(App):
 		self.event_loop(events)
 
 	def stop(self, *args):
+		self.watchdog.stop()
 		self.modulators.stop()
 		self._stop = True
 

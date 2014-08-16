@@ -109,23 +109,6 @@ class TransformsWindow(object):
 		win.refresh()
 
 
-class App(object):
-
-	def start(self, *args, **kw):
-		def run(curses_window):
-			self.stdscr = curses_window
-			self.run(*args, **kw)
-		curses.wrapper(run)
-
-	def event_loop(self, funcs):
-		try:
-			while not self._stop:
-				c = self.stdscr.getch()
-				if DISPLAY_PRESSED_KEY: debug('\n\nkey pressed: %s   '%c)
-				if c in funcs: funcs[c]()
-		except KeyboardInterrupt:
-			pass
-
 def oscillator(speed, depth):
 	def f(frame):
 		return math.sin(frame*speed)*depth
@@ -197,7 +180,22 @@ class Modulators(threading.Thread):
 			self.update(self.transforms)
 
 
-class Domulatrix(App):
+class Domulatrix(object):
+
+	def start(self, *args, **kw):
+		def run(curses_window):
+			self.stdscr = curses_window
+			self.run(*args, **kw)
+		curses.wrapper(run)
+
+	def poll_keyboard(self, funcs):
+		try:
+			while not self._stop:
+				c = self.stdscr.getch()
+				if DISPLAY_PRESSED_KEY: debug('\n\nkey pressed: %s   '%c)
+				if c in funcs: funcs[c]()
+		except KeyboardInterrupt:
+			pass
 
 	def run(self, voxel_folder):
 
@@ -345,7 +343,7 @@ class Domulatrix(App):
 				del events[char]
 
 		self.update(t)
-		self.event_loop(events)
+		self.poll_keyboard(events)
 
 	def stop(self, *args):
 		self.watchdog.stop()

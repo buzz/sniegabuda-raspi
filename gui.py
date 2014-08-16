@@ -10,6 +10,7 @@ import math
 
 import numpy as np
 
+from curses_pads import TransformsPad
 from model import middle_sorted as leds
 from logger import debug
 
@@ -39,75 +40,6 @@ except ImportError:
 VOXELSPACES_ROOT_FOLDER = 'data/voxelspaces/'
 DISPLAY_PRESSED_KEY = False
 MODULATE = True
-
-class TransformsWindow(object):
-	width = 80
-	height = 20
-
-	def __init__(self):
-		begin_x = 0; begin_y = 0
-		height = 22; width = 80
-		self.win = curses.newwin(height, width, begin_y, begin_x)
-
-		t = self.transforms = {}
-		t['tx'] = t['ty'] = t['tz'] = -1
-		t['rx'] = t['ry'] = t['rz'] = -1
-		t['sx'] = t['sy'] = t['sz'] = -1
-		self.voxelspace_folder = 'n/a'
-
-	def update_transforms(self, transforms):
-		self.transforms = transforms
-		self.update()
-
-	def update_voxelspace_folder(self, voxelspace_folder):
-		self.voxelspace_folder = voxelspace_folder
-		self.update()
-
-	def update(self):
-		t = self.transforms
-		win = self.win
-
-		win.erase()
-
-		lines = """
-			=============================================
-			voxelspace: "%s"
-			=============================================
-			            |    X       Y       Z
-			=============================================
-			            |
-			            |  A / D   X / W   C / E
-			translation | %6.2f  %6.2f  %6.2f
-			            |
-			---------------------------------------------
-			            |
-			            |  R / T   F / G   V / B
-			rotation    |  %5.1f° %5.1f° %5.1f°
-			            |
-			---------------------------------------------
-			            |
-			            |  Z / U   H / J   N / M   K / L
-			scaling     | %5.1f%%  %5.1f%%  %5.1f%%
-			            |
-			============|================================
-			            |    X       Y       Z
-			=============================================
-		"""
-
-		lines = lines % (
-			self.voxelspace_folder,
-			t['tx'], t['ty'], t['tz'],
-			t['rx'], t['ry'], t['rz'],
-			t['sx'], t['sy'], t['sz']
-		)
-
-		lines = lines.replace('\t','').replace('\r','').split('\n')[1:-1]
-
-		for y, line in enumerate(lines):
-			win.addstr(y, 0, line)
-
-		win.refresh()
-
 
 def oscillator(speed, depth):
 	def f(frame):
@@ -201,9 +133,8 @@ class Domulatrix(object):
 
 		self.voxels = None
 		self.modulators = None
-		self.transforms_window = None
 
-		self.transforms_window = TransformsWindow()
+		self.transforms_pad = TransformsPad()
 
 		self.init_transforms()
 
@@ -382,7 +313,7 @@ class Domulatrix(object):
 			if self.modulators: self.modulators.stop()
 			self.modulators = modulators
 			self.modulators.start()
-			self.transforms_window.update_voxelspace_folder(settings_file)
+			self.transforms_pad.update_voxelspace_folder(settings_file)
 
 	def get_transformed_model(self, transforms):
 		t = transforms
@@ -419,7 +350,7 @@ class Domulatrix(object):
 		return leds_
 
 	def update(self, transforms):
-		self.transforms_window.update_transforms(transforms)
+		self.transforms_pad.update_transforms(transforms)
 		self.update_leds(transforms)
 
 	def update_leds(self, transforms):

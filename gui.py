@@ -11,6 +11,7 @@ import math
 import numpy as np
 
 from model import middle_sorted as leds
+from logger import debug
 
 try:
 	from voxelspace_cython import VoxelSpace
@@ -31,11 +32,6 @@ try:
 	strip = LEDStrip()
 except ImportError:
 	strip = None
-
-def debug(*args):
-	for a in args:
-		sys.stderr.write(str(a) + ' ')
-	sys.stderr.write('\n\r')
 
 VOXELSPACES_ROOT_FOLDER = 'data/voxelspaces/'
 DISPLAY_PRESSED_KEY = False

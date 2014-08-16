@@ -29,6 +29,9 @@ def debug(*args):
 		sys.stderr.write(str(a) + ' ')
 	sys.stderr.write('\n\r')
 
+DISPLAY_PRESSED_KEY = True
+
+
 class TitlePad(object):
 	def __init__(self):
 		w = 80
@@ -56,7 +59,7 @@ class TransformsWindow(object):
 
 	def __init__(self):
 		begin_x = 0; begin_y = 0
-		height = 11; width = 80
+		height = 20; width = 80
 		self.win = curses.newwin(height, width, begin_y, begin_x)
 
 	def update(self, transforms):
@@ -65,19 +68,36 @@ class TransformsWindow(object):
 
 		win.erase()
 
-		lines = [
-			'                  + d +      + w +      + e +',
-			'translation - X: %6.2f, Y: %6.2f, Z: %6.2f' % (t['tx'], t['ty'], t['tz']),
-			'                  - a -      - x -      - c -',
-			'',
-			'                  + t +      + g +      + b +',
-			'rotation    - X: %5.1f°, Y: %5.1f°, Z: %5.1f°' % (t['rx'], t['ry'], t['rz']),
-			'                  - r -      - f -      - v -',
-			'',
-			'                  + z +      + h +      + n +      + l +',
-			'scaling     - X: %5.1f%%, Y: %5.1f%%, Z: %5.1f%%,      XYZ' % (t['sx'], t['sy'], t['sz']),
-			'                  - u -      - j -      - m -      - k -',
-		]
+		lines = """
+			=============================================
+			            |    X       Y       Z
+			=============================================
+			            |
+			            |  A / D   X / W   C / E
+			translation | %6.2f  %6.2f  %6.2f
+			            |
+			---------------------------------------------
+			            |
+			            |  R / T   F / G   V / B
+			rotation    |  %5.1f° %5.1f° %5.1f°
+			            |
+			---------------------------------------------
+			            |
+			            |  Z / U   H / J   N / M   K / L
+			scaling     | %5.1f%%  %5.1f%%  %5.1f%%
+			            |
+			============|================================
+			            |    X       Y       Z
+			=============================================
+		"""
+
+		lines = lines % (
+			t['tx'], t['ty'], t['tz'],
+			t['rx'], t['ry'], t['rz'],
+			t['sx'], t['sy'], t['sz']
+		)
+
+		lines = lines.replace('\t','').replace('\r','').split('\n')[1:-1]
 
 		for y, line in enumerate(lines):
 			win.addstr(y, 0, line)
@@ -97,6 +117,7 @@ class App(object):
 		try:
 			while not self._stop:
 				c = self.stdscr.getch()
+				if DISPLAY_PRESSED_KEY: debug('\n\nkey pressed: %s   '%c)
 				if c in funcs: funcs[c]()
 		except KeyboardInterrupt:
 			pass
@@ -186,21 +207,51 @@ class Domulatrix(App):
 		step_scale       = 1.02
 		step_rotate      = 7.5
 
-		xxx = t
+		def scale_dec(multiplier):
+			t['sx'] /= step_scale ** multiplier
+			t['sy'] /= step_scale ** multiplier
+			t['sz'] /= step_scale ** multiplier
 
-		def sx_dec(m): xxx['sx'] /= step_scale ** m
-		def sx_inc(m): xxx['sx'] *= step_scale ** m
-		def sy_dec(m): xxx['sy'] /= step_scale ** m
-		def sy_inc(m): xxx['sy'] *= step_scale ** m
-		def sz_dec(m): xxx['sz'] /= step_scale ** m
-		def sz_inc(m): xxx['sz'] *= step_scale ** m
+		def scale_inc(multiplier):
+			t['sx'] *= step_scale ** multiplier
+			t['sy'] *= step_scale ** multiplier
+			t['sz'] *= step_scale ** multiplier
 
-		def rx_dec(m): xxx['rx'] = (xxx['rx'] - step_rotate * m) % 360
-		def rx_inc(m): xxx['rx'] = (xxx['rx'] + step_rotate * m) % 360
-		def ry_dec(m): xxx['ry'] = (xxx['ry'] - step_rotate * m) % 360
-		def ry_inc(m): xxx['ry'] = (xxx['ry'] + step_rotate * m) % 360
-		def rz_dec(m): xxx['rz'] = (xxx['rz'] - step_rotate * m) % 360
-		def rz_inc(m): xxx['rz'] = (xxx['rz'] + step_rotate * m) % 360
+		def stop(*args):
+			self.modulators._stop = True
+			self._stop = True
+
+		events = {
+
+			# translation
+			'a': {'attr': 'tx', 'func': lambda val, mul: val-(step_translate*mul) },
+			'd': {'attr': 'tx', 'func': lambda val, mul: val+(step_translate*mul) },
+			'x': {'attr': 'ty', 'func': lambda val, mul: val-(step_translate*mul) },
+			'w': {'attr': 'ty', 'func': lambda val, mul: val+(step_translate*mul) },
+			'c': {'attr': 'tz', 'func': lambda val, mul: val-(step_translate*mul) },
+			'e': {'attr': 'tz', 'func': lambda val, mul: val+(step_translate*mul) },
+
+			# scale
+			'z': {'attr': 'sx', 'func': lambda val, mul: val/(step_scale**mul) },
+			'u': {'attr': 'sx', 'func': lambda val, mul: val*(step_scale**mul) },
+			'h': {'attr': 'sy', 'func': lambda val, mul: val/(step_scale**mul) },
+			'j': {'attr': 'sy', 'func': lambda val, mul: val*(step_scale**mul) },
+			'n': {'attr': 'sz', 'func': lambda val, mul: val/(step_scale**mul) },
+			'm': {'attr': 'sz', 'func': lambda val, mul: val*(step_scale**mul) },
+			'k': scale_dec,
+			'l': scale_inc,
+
+			# rotation
+			'r': {'attr': 'rx', 'func': lambda val, mul: (val-step_rotate*mul)%360 },
+			't': {'attr': 'rx', 'func': lambda val, mul: (val+step_rotate*mul)%360 },
+			'f': {'attr': 'ry', 'func': lambda val, mul: (val-step_rotate*mul)%360 },
+			'g': {'attr': 'ry', 'func': lambda val, mul: (val+step_rotate*mul)%360 },
+			'v': {'attr': 'rz', 'func': lambda val, mul: (val-step_rotate*mul)%360 },
+			'b': {'attr': 'rz', 'func': lambda val, mul: (val+step_rotate*mul)%360 },
+
+			# special
+			17: stop, # ctrl-q
+		}
 
 		def event_wrapper(func, multiplier):
 			def wrapped():
@@ -208,74 +259,21 @@ class Domulatrix(App):
 				self.update(self.transforms)
 			return wrapped
 
-		def scale_dec(m):
-			xxx['sx'] /= step_scale ** m
-			xxx['sy'] /= step_scale ** m
-			xxx['sz'] /= step_scale ** m
-
-		def scale_inc(m):
-			xxx['sx'] *= step_scale ** m
-			xxx['sy'] *= step_scale ** m
-			xxx['sz'] *= step_scale ** m
-
-		def foo(*args):
-			self.physics._stop = True
-			self._stop = True
-
-		events = {
-
-			# translation
-			'a': {'attr': 'tx', 'func': lambda v,s,m: v-s*m, 'step': step_translate },
-			'd': {'attr': 'tx', 'func': lambda v,s,m: v+s*m, 'step': step_translate },
-			'w': {'attr': 'ty', 'func': lambda v,s,m: v-s*m, 'step': step_translate },
-			'x': {'attr': 'ty', 'func': lambda v,s,m: v+s*m, 'step': step_translate },
-			'c': {'attr': 'tz', 'func': lambda v,s,m: v-s*m, 'step': step_translate },
-			'e': {'attr': 'tz', 'func': lambda v,s,m: v+s*m, 'step': step_translate },
-
-			# scale
-			'z': sx_dec,
-			'u': sx_inc,
-			'h': sy_dec,
-			'j': sy_inc,
-			'n': sz_dec,
-			'm': sz_inc,
-			'k': scale_dec,
-			'l': scale_inc,
-
-			# rotation
-			'r': rx_dec,
-			't': rx_inc,
-			'f': ry_dec,
-			'g': ry_inc,
-			'v': rz_dec,
-			'b': rz_inc,			# translation
-			'a': {'attr': 'tx', 'func': lambda v,s,m: v-s*m, 'step': step_translate },
-			'd': {'attr': 'tx', 'func': lambda v,s,m: v+s*m, 'step': step_translate },
-			'w': {'attr': 'ty', 'func': lambda v,s,m: v-s*m, 'step': step_translate },
-			'x': {'attr': 'ty', 'func': lambda v,s,m: v+s*m, 'step': step_translate },
-			'c': {'attr': 'tz', 'func': lambda v,s,m: v-s*m, 'step': step_translate },
-			'e': {'attr': 'tz', 'func': lambda v,s,m: v+s*m, 'step': step_translate },
-
-			# special
-			'p': foo,
-		}
-
 		def create_hander(opts):
 			def handler(mul):
-				attr, func, step = opts['attr'], opts['func'], opts['step']
-				v = t[attr]
-				t[attr] = func(v, step, mul)
+				attr, func = opts['attr'], opts['func']
+				t[attr] = func(t[attr], mul)
 
 			return handler
-
 
 		for char, opts in events.items():
 			if callable(opts): handler = opts
 			else:              handler = create_hander(opts)
 
-			events[ord(char)]         = event_wrapper(handler, 1.)
-			events[ord(char.upper())] = event_wrapper(handler, shift_multiplier)
-			del events[char]
+			if type(char) is not int:
+				events[ord(char)]         = event_wrapper(handler, 1.)
+				events[ord(char.upper())] = event_wrapper(handler, shift_multiplier)
+				del events[char]
 
 		self.physics = Physics(t, m, self.update)
 		self.physics.start()

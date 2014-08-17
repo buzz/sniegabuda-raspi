@@ -1,4 +1,42 @@
 {
 	"layer_size": [10, 10],
-	"bounds": [[-30, -30, 0], [30, 30, 100]]
+	"bounds": [[-30, -30, 0], [30, 30, 100]],
+
+	"modulation": {
+		"tx": [
+			{"type": "linear_motion", "options": { "speed": 0.212 }}
+		],
+
+		"ty": [
+			{"type": "linear_motion", "options": { "speed": 0.172 }}
+		],
+
+		"tz": [
+			{"type": "linear_motion", "options": { "speed": 0.0145 }},
+			{"type": "oscillator", "options": { "speed": 0.034, "depth": 2 }}
+		],
+
+		"rx": [
+			{"type": "oscillator", "options": { "speed": 0.01, "depth": 20 }}
+		],
+
+		"ry": [
+			{"type": "linear_motion", "options": { "speed": 0.0041, "wrap": 360 }}
+		],
+
+		"rz": [
+			{"type": "linear_motion", "options": { "speed": 0.0013, "wrap": 360 }},
+			{"type": "oscillator", "options": { "speed": 0.02, "depth": 180 }}
+		],
+
+		"sx": [
+			{"type": "oscillator", "options": { "speed": 0.0027, "depth": 20 }}
+		],
+		"sy": [
+			{"type": "oscillator", "options": { "speed": 0.0027, "depth": 20 }}
+		],
+		"sz": [
+			{"type": "oscillator", "options": { "speed": 0.0027, "depth": 20 }}
+		]
+	}
 }

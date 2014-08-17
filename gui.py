@@ -69,10 +69,11 @@ class Modulators(threading.Thread):
 		threading.Thread.__init__(self)
 		self._stop = False
 
-		self.frame = -1
+		self.frame = 0
 		self.transforms = transforms
 		self.update = update
 		self.init_modulators(voxelspace)
+		self.speed_multiplier = 1.
 
 	def init_modulators(self, voxelspace):
 		self.modulators = {}
@@ -94,10 +95,10 @@ class Modulators(threading.Thread):
 		self._stop = True
 
 	def reset(self):
-		self.frame = -1
+		self.frame = 0
 
 	def step(self):
-		self.frame += 1
+		self.frame += self.speed_multiplier
 
 		transforms = self.transforms.copy()
 
@@ -222,6 +223,13 @@ class Domulatrix(object):
 			self.current_voxelspace_idx %= len(self.available_voxelspaces)
 			self.load_voxelspace(*self.available_voxelspaces[self.current_voxelspace_idx])
 
+		def set_modulation_speed(multiplier):
+			def setter(*args):
+				self.speed_multiplier = self.modulators.speed_multiplier = multiplier
+				self.transforms_pad.set_speed_multiplier('%s%%' % (multiplier*100))
+				return False
+			return setter
+
 		events = {
 
 			# reset
@@ -253,6 +261,18 @@ class Domulatrix(object):
 			'v': {'attr': 'rz', 'func': lambda val, mul: (val-step_rotate*mul)%360 },
 			'b': {'attr': 'rz', 'func': lambda val, mul: (val+step_rotate*mul)%360 },
 
+			# modulation speed
+			'1': set_modulation_speed(0.24),
+			'2': set_modulation_speed(0.34),
+			'3': set_modulation_speed(0.49),
+			'4': set_modulation_speed(0.7),
+			'5': set_modulation_speed(1),
+			'6': set_modulation_speed(1.42),
+			'7': set_modulation_speed(2.04),
+			'8': set_modulation_speed(2.91),
+			'9': set_modulation_speed(4.16),
+			'0': set_modulation_speed(5.94),
+
 			# voxelspaces
 			260: prev_voxelspace, # arrow-left
 			261: next_voxelspace, # arrow-right
@@ -263,8 +283,9 @@ class Domulatrix(object):
 
 		def event_wrapper(func, multiplier):
 			def wrapped():
-				func(multiplier)
-				self.update(self.transforms)
+				do_update = func(multiplier)
+				if do_update is not False:
+					self.update(self.transforms)
 			return wrapped
 
 		def create_hander(opts):
@@ -323,7 +344,7 @@ class Domulatrix(object):
 			if self.modulators: self.modulators.stop()
 			self.modulators = modulators
 			self.modulators.start()
-			self.transforms_pad.update_voxelspace_folder(settings_file)
+			self.transforms_pad.set_voxelspace_folder(settings_file)
 
 	def get_transformed_model(self, transforms):
 		t = transforms
@@ -360,7 +381,7 @@ class Domulatrix(object):
 		return leds_
 
 	def update(self, transforms):
-		self.transforms_pad.update_transforms(transforms)
+		self.transforms_pad.set_transforms(transforms)
 		self.update_leds(transforms)
 
 	def update_leds(self, transforms):

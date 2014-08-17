@@ -6,6 +6,8 @@ template_transforms = """
 =============================================
 voxelspace: "%s"
 =============================================
+speed multiplier: %s
+=============================================
             |    X       Y       Z
 =============================================
             |
@@ -45,13 +47,18 @@ class TransformsPad(object):
 		t['rx'] = t['ry'] = t['rz'] = -1
 		t['sx'] = t['sy'] = t['sz'] = -1
 		self.voxelspace_folder = 'n/a'
+		self.speed_multiplier = '100%'
 
-	def update_transforms(self, transforms):
+	def set_transforms(self, transforms):
 		self.transforms = transforms
 		self.update()
 
-	def update_voxelspace_folder(self, voxelspace_folder):
+	def set_voxelspace_folder(self, voxelspace_folder):
 		self.voxelspace_folder = voxelspace_folder
+		self.update()
+
+	def set_speed_multiplier(self, speed_multiplier):
+		self.speed_multiplier = speed_multiplier
 		self.update()
 
 	def update(self):
@@ -60,6 +67,7 @@ class TransformsPad(object):
 
 		rendered = template_transforms % (
 			self.voxelspace_folder,
+			self.speed_multiplier,
 			t['tx'], t['ty'], t['tz'],
 			t['rx'], t['ry'], t['rz'],
 			t['sx'], t['sy'], t['sz']

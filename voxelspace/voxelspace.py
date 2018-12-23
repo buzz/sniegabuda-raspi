@@ -1,7 +1,7 @@
 import os
 from os.path import join, dirname
 import json
-import Image
+from PIL import Image
 import numpy as np
 
 getpixels_cython = None

@@ -32,11 +32,15 @@ from watcher import WatchDog
 from transformations import euler_matrix
 from math import radians as rad
 
-try:
-	from ledstrip import LEDStrip
+if len(sys.argv) > 2 and sys.argv[2] == 'artnet':
+	from artnet import LEDStrip
 	strip = LEDStrip()
-except ImportError:
-	strip = None
+else:
+	try:
+		from ledstrip import LEDStrip
+		strip = LEDStrip()
+	except ImportError:
+		strip = None
 
 VOXELSPACES_ROOT_FOLDER = 'data/voxelspaces/'
 DISPLAY_PRESSED_KEY = False
@@ -411,7 +415,7 @@ class Domulatrix(object):
 
 try:
 	settings_path = sys.argv[1]
-	voxel_folder, settings_file = re.compile('data/voxelspaces/(.*)/(settings.*\.json)').match(settings_path).groups()
+	voxel_folder, settings_file = re.compile('data/voxelspaces/(.*)/(_settings.*\.json)').match(settings_path).groups()
 except IndexError:
 	print 'Argument missing.'
 	sys.exit()

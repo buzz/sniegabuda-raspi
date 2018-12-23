@@ -32,15 +32,21 @@ from watcher import WatchDog
 from transformations import euler_matrix
 from math import radians as rad
 
+strip = None
 if len(sys.argv) > 2 and sys.argv[2] == 'artnet':
 	from artnet import LEDStrip
-	strip = LEDStrip()
+	if len(sys.argv) > 3:
+		strip = LEDStrip(sys.argv[3])
+	else:
+		strip = LEDStrip()
+	print 'Using Art-Net'
 else:
 	try:
 		from ledstrip import LEDStrip
 		strip = LEDStrip()
+		print 'Using SPI'
 	except ImportError:
-		strip = None
+		print 'Using dummy pixels'
 
 VOXELSPACES_ROOT_FOLDER = 'data/voxelspaces/'
 DISPLAY_PRESSED_KEY = False
@@ -136,7 +142,6 @@ class Domulatrix(object):
 			pass
 
 	def run(self, voxel_folder, settings_file):
-
 		self.voxels = None
 		self.modulators = None
 
@@ -389,7 +394,6 @@ class Domulatrix(object):
 		self.update_leds(transforms)
 
 	def update_leds(self, transforms):
-
 		leds = self.get_transformed_model(transforms)
 		colors = self.voxels.getpixels(leds)
 
@@ -415,7 +419,7 @@ class Domulatrix(object):
 
 try:
 	settings_path = sys.argv[1]
-	voxel_folder, settings_file = re.compile('data/voxelspaces/(.*)/(_settings.*\.json)').match(settings_path).groups()
+	voxel_folder, settings_file = re.compile('data/voxelspaces/(.*)/(_?settings.*\.json)').match(settings_path).groups()
 except IndexError:
 	print 'Argument missing.'
 	sys.exit()
